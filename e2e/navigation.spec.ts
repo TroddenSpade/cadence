@@ -92,7 +92,9 @@ test('the metronome dock is available away from its full page only', async ({ pa
 
   await page.locator('.side-link[href="/"]').click();
   await expect(page.locator('.metronome-dock')).toBeVisible();
-  await expect(page.locator('.metronome-dock-fab, .metronome-dock')).toHaveCount(1);
+  await expect(page.locator('.metronome-dock.collapsed')).toBeVisible();
+  await expect(page.locator('.metronome-dock')).toHaveCount(1);
+  await expect(page.locator('.metronome-dock-fab')).toHaveCount(1);
 
   await page.goto('/tuner', { waitUntil: 'networkidle' });
   await expect(page.locator('.metronome-dock')).toHaveCount(0);

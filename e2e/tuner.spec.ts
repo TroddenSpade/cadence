@@ -116,6 +116,7 @@ test.describe('tuner', () => {
 
   test('hides its dock on the tuner while the metronome keeps its state', async ({ page }) => {
     await openRoute(page, '/');
+    await page.getByRole('button', { name: 'Open the metronome' }).click();
     await page.locator('.metronome-dock').getByRole('button', { name: 'Start' }).click();
     await expect(page.locator('.metronome-dock')).toHaveClass(/running/);
 

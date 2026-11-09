@@ -100,6 +100,10 @@ test.describe('mobile layout', () => {
     expect(navBox).not.toBeNull();
     expect(dockBox!.y + dockBox!.height, 'dock must clear the fixed nav').toBeLessThanOrEqual(navBox!.y + 1);
 
+    await expect(dock).toHaveClass(/collapsed/);
+    await page.getByRole('button', { name: 'Open the metronome' }).click();
+    await expect(dock).not.toHaveClass(/collapsed/);
+
     await dock.getByRole('button', { name: 'Start' }).click();
     await expect(dock).toHaveClass(/running/);
 

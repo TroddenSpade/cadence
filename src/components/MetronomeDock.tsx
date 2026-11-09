@@ -17,9 +17,10 @@ export default function MetronomeDock() {
   const { settings, running, beat, toggle, nudgeBpm } = useMetronome();
   const [collapsed, setCollapsed] = useState(() => {
     try {
-      return window.localStorage.getItem(DOCK_KEY) === '1';
+      // Start minimized unless the player has explicitly expanded the dock.
+      return window.localStorage.getItem(DOCK_KEY) !== '0';
     } catch {
-      return false;
+      return true;
     }
   });
 

@@ -139,6 +139,9 @@ test.describe('metronome', () => {
 
     await page.locator('.side-link[href="/"]').click();
     const dock = page.locator('.metronome-dock');
+    await expect(dock).toHaveClass(/collapsed/);
+    await page.getByRole('button', { name: 'Open the metronome' }).click();
+    await expect(dock).not.toHaveClass(/collapsed/);
     await expect(dock).toBeVisible();
     await expect(dock).toHaveClass(/running/);
     await expect(dock.locator('.metronome-dock-tempo strong')).toHaveText('120');
