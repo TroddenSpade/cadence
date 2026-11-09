@@ -4087,6 +4087,22 @@ html.lang-fa .sidebar-language-label {
   gap: 12px;
 }
 
+.sync-code-form {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.sync-code-input {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.28em;
+  text-align: center;
+}
+
+.sync-notice-error {
+  color: var(--red);
+}
+
 .sync-input-row {
   display: flex;
   align-items: stretch;

@@ -25,6 +25,7 @@ import {
   type SkillProgress,
 } from './progressState';
 import { loadSupabase, supabaseConfigured } from './supabase';
+import { isEmailCodeComplete, normalizeEmailCode } from './otp';
 
 export { todayKey } from './progressState';
 export type {
@@ -55,6 +56,7 @@ interface SyncApi {
   lastSyncedAt: number | null;
   syncError: string | null;
   signIn: (email: string) => Promise<{ ok: boolean; error?: string }>;
+  verifyEmailCode: (email: string, code: string) => Promise<{ ok: boolean; error?: string }>;
   signOut: () => Promise<void>;
   syncNow: () => Promise<void>;
   exportProgress: () => string;
@@ -93,6 +95,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
   const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
 
   const stateRef = useRef(state);
+  const sessionRef = useRef<Session | null>(null);
   const lastPushedRef = useRef<string | null>(null);
   const lastPullRef = useRef(0);
   const syncReadyRef = useRef(!supabaseConfigured);
@@ -140,24 +143,18 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!supabase) return;
     let active = true;
-    supabase.auth
-      .getSession()
-      .then(({ data }) => {
-        if (!active) return;
-        if (data.session) {
-          syncReadyRef.current = false;
-          setSyncReady(false);
-        }
-        setSession(data.session);
-        setStatus(data.session ? 'syncing' : 'signed-out');
-      })
-      .catch(() => {
-        if (active) setStatus('error');
-      });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, next) => {
-      // Never push until this session has pulled and merged the account copy.
-      syncReadyRef.current = false;
-      setSyncReady(false);
+
+    const adopt = (next: Session | null) => {
+      if (!active) return;
+      const current = sessionRef.current;
+      if (current?.user.id === next?.user.id && current?.access_token === next?.access_token) return;
+
+      if (next) {
+        // Never push until this session has pulled and merged the account copy.
+        syncReadyRef.current = false;
+        setSyncReady(false);
+      }
+      sessionRef.current = next;
       setSession(next);
       if (next) {
         setStatus('syncing');
@@ -165,10 +162,37 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
         setStatus('signed-out');
         lastPushedRef.current = null;
       }
-    });
+    };
+
+    const checkSession = () => {
+      void supabase.auth
+        .getSession()
+        .then(({ data }) => adopt(data.session))
+        .catch(() => {
+          if (active && !sessionRef.current) setStatus('error');
+        });
+    };
+
+    checkSession();
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, next) => adopt(next));
+
+    // An installed Chrome PWA shares the browser profile's storage. When the
+    // email link completes in a browser tab, re-read the session as soon as the
+    // installed app returns to the foreground instead of staying signed out
+    // until a full reload.
+    const onResume = () => {
+      if (document.visibilityState === 'visible') checkSession();
+    };
+    document.addEventListener('visibilitychange', onResume);
+    window.addEventListener('focus', checkSession);
+    window.addEventListener('pageshow', checkSession);
+
     return () => {
       active = false;
       listener.subscription.unsubscribe();
+      document.removeEventListener('visibilitychange', onResume);
+      window.removeEventListener('focus', checkSession);
+      window.removeEventListener('pageshow', checkSession);
     };
   }, [supabase]);
 
@@ -452,10 +476,39 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     }
   }, [supabase]);
 
+  const verifyEmailCode = useCallback(
+    async (email: string, code: string) => {
+      if (!supabaseConfigured) return { ok: false, error: 'Sync is not configured in this build.' };
+      const client = supabase ?? (await loadSupabase());
+      if (!client) return { ok: false, error: 'Sync is not configured in this build.' };
+      const token = normalizeEmailCode(code);
+      if (!isEmailCodeComplete(token)) {
+        return { ok: false, error: 'Enter the 6-digit code from the email.' };
+      }
+      try {
+        const { error } = await client.auth.verifyOtp({
+          email: email.trim(),
+          token,
+          type: 'email',
+        });
+        return error
+          ? { ok: false, error: 'That code is incorrect or has expired. Request a new one.' }
+          : { ok: true };
+      } catch {
+        return {
+          ok: false,
+          error: 'Could not verify the code. Check your connection and try again.',
+        };
+      }
+    },
+    [supabase],
+  );
+
   const signOut = useCallback(async () => {
     const client = supabase ?? (await loadSupabase());
     if (!client) return;
     await client.auth.signOut();
+    sessionRef.current = null;
     setSession(null);
     setStatus('signed-out');
     setLastSyncedAt(null);
@@ -515,6 +568,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       lastSyncedAt,
       syncError,
       signIn,
+      verifyEmailCode,
       signOut,
       syncNow,
       exportProgress,
@@ -533,6 +587,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       lastSyncedAt,
       syncError,
       signIn,
+      verifyEmailCode,
       signOut,
       syncNow,
       exportProgress,

@@ -131,15 +131,25 @@ Enable it once:
 1. Create a free project at [supabase.com](https://supabase.com).
 2. In **SQL Editor**, run [`supabase/schema.sql`](supabase/schema.sql). It creates the `progress` table and row-level security policies so each user can only read and write their own row.
 3. In **Authentication → URL Configuration**, set **Site URL** to the deployed address (for example `https://parsasam.ir/Cadance/`), and add that address plus `http://localhost:5173/` to **Redirect URLs**. The email link returns to the app root, where Supabase's PKCE flow completes.
-4. Copy the project URL and the **anon public** key from **Project Settings → API** into `.env.local`. The URL is the project root only — `https://<project-ref>.supabase.co`, **not** the `/rest/v1/` endpoint:
+4. In **Authentication → Email Templates → Magic Link**, include `{{ .Token }}` so the email shows a six-digit code. Keep `{{ .ConfirmationURL }}` too if you want to offer both routes:
+
+   ```html
+   <p>Your Cadence sign-in code:</p>
+   <p><strong>{{ .Token }}</strong></p>
+   <p><a href="{{ .ConfirmationURL }}">Or sign in with a link</a></p>
+   ```
+
+5. Copy the project URL and the **anon public** key from **Project Settings → API** into `.env.local`. The URL is the project root only — `https://<project-ref>.supabase.co`, **not** the `/rest/v1/` endpoint:
 
    ```bash
    cp .env.example .env.local
    ```
 
-5. For GitHub Pages, add both names as repository **variables** under **Settings → Secrets and variables → Actions → Variables**: `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. The workflow passes them into the build.
+6. For GitHub Pages, add both names as repository **variables** under **Settings → Secrets and variables → Actions → Variables**: `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. The workflow passes them into the build.
 
-Then open **Settings → Account**, enter an email, and follow the link. There is no password to store. The anon key is safe to ship in the bundle because row-level security restricts every request to the signed-in user.
+Then open **Settings → Account**, enter an email, and enter the six-digit code from the message (or follow the link). There is no password to store. The anon key is safe to ship in the bundle because row-level security restricts every request to the signed-in user.
+
+**Email template note:** projects using Supabase's built-in free email provider created after June 2026 may not be able to edit templates. Configure custom SMTP under **Authentication → Emails** (or use a project that allows template editing) before relying on email codes.
 
 How merging works:
 
@@ -152,7 +162,7 @@ How merging works:
 
 Supabase's built-in email sender is rate-limited and intended for testing. For real sign-ups, configure SMTP under **Authentication → Emails** with any transactional provider.
 
-**Android note:** the native app cannot yet receive an `https://` email link. Completing sign-in in the APK needs a custom scheme (for example `com.cadence.musictheory://auth`) plus `@capacitor/browser` and `@capacitor/app` listeners. Until that is wired, sync works in the browser and installed PWA on both devices.
+**Android note:** the native shell cannot open the `https://` email link directly, so enter the six-digit code from the email in the app. The link still works in a browser or installed PWA. A direct link flow in the APK would need a custom scheme (for example `com.cadence.musictheory://auth`) plus `@capacitor/browser` and `@capacitor/app` listeners.
 
 **Backups:** **Settings → Data → Export backup** downloads a JSON snapshot. **Import** restores one and treats it as a reset, so it replaces older copies on other devices.
 

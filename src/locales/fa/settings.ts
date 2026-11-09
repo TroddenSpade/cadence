@@ -36,19 +36,33 @@ export const faSettings: Record<string, string> = {
   'when building to enable accounts — the README has the setup steps. You can still move progress between devices with a backup file.':
     'را تنظیم کنید — مراحل راه‌اندازی در README آمده است. هنوز می‌توانید پیشرفت را با یک فایل پشتیبان بین دستگاه‌ها منتقل کنید.',
   'Last synced {date}': 'آخرین همگام‌سازی: {date}',
-  'Check {email} for a sign-in link. It may take a minute.':
-    'برای پیوند ورود، {email} را بررسی کنید. ممکن است یک دقیقه طول بکشد.',
+  'Check {email} for a 6-digit sign-in code. Enter it below.':
+    'برای کد ورود ۶ رقمی، {email} را بررسی کنید. آن را در پایین وارد کنید.',
   'Could not send the link.': 'پیوند ارسال نشد.',
   'Sync now': 'همین حالا همگام‌سازی',
   'Sign out': 'خروج از حساب',
   'Practice works offline. Changes merge with your account when you reconnect, and resetting progress on one device clears it everywhere.':
     'تمرین آفلاین کار می‌کند. با اتصال دوباره، تغییرات با حساب شما ادغام می‌شوند و بازنشانی پیشرفت در یک دستگاه، آن را در همه‌جا پاک می‌کند.',
-  'Sign in with an email link — no password to remember. Your lessons, reviews, XP, and streaks then follow you between devices. Progress stays on this device and keeps working offline.':
-    'با پیوند ایمیل وارد شوید — بدون نیاز به به‌خاطر سپردن رمز. درس‌ها، مرورها، تجربه و زنجیره‌های شما بین دستگاه‌ها همراهتان می‌آیند. پیشرفت روی همین دستگاه می‌ماند و آفلاین کار می‌کند.',
+  'Sign in with a one-time code — no password to remember. Your lessons, reviews, XP, and streaks then follow you between devices. Progress stays on this device and keeps working offline.':
+    'با کد یک‌بارمصرف وارد شوید — بدون نیاز به به‌خاطر سپردن رمز. درس‌ها، مرورها، تجربه و زنجیره‌های شما بین دستگاه‌ها همراهتان می‌آیند. پیشرفت روی همین دستگاه می‌ماند و آفلاین کار می‌کند.',
   'Email address': 'نشانی ایمیل',
   'you@example.com': 'you@example.com',
   'Sending…': 'در حال ارسال…',
-  'Email me a link': 'پیوند را برایم ایمیل کن',
+  'Email me a code': 'کد را برایم ایمیل کن',
+  'Sign-in code': 'کد ورود',
+  '6-digit code': 'کد ۶ رقمی',
+  'Verifying…': 'در حال تأیید…',
+  'Verify code': 'تأیید کد',
+  'Use the code from the email. It expires after one hour.':
+    'از کد موجود در ایمیل استفاده کنید. این کد پس از یک ساعت منقضی می‌شود.',
+  'That code is incorrect or has expired. Request a new one.':
+    'این کد نادرست است یا منقضی شده است. کد تازه‌ای درخواست کنید.',
+  'Enter the 6-digit code from the email.': 'کد ۶ رقمی را از ایمیل وارد کنید.',
+  'Could not verify the code. Check your connection and try again.':
+    'کد تأیید نشد. اتصال خود را بررسی کنید و دوباره تلاش کنید.',
+  'Sync is not configured in this build.': 'همگام‌سازی در این نسخه تنظیم نشده است.',
+  'Could not send the sign-in link. Check your connection and try again.':
+    'پیوند ورود ارسال نشد. اتصال خود را بررسی کنید و دوباره تلاش کنید.',
 
   // Language panel
   Language: 'زبان',

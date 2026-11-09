@@ -4,6 +4,7 @@ import { synth } from '../lib/audio';
 import type { IconName } from '../components/Icons';
 import { ALL_LESSONS, COURSES } from '../data/curriculum';
 import { levelFromXp, syncStatusLabel, todayKey, useProgress, type InstrumentMode } from '../lib/progress';
+import { isEmailCodeComplete, normalizeEmailCode } from '../lib/otp';
 import type { NoteNaming } from '../lib/music';
 import { LANGUAGES, useI18n } from '../lib/i18n';
 import { instrumentById } from '../lib/tunings';
@@ -119,23 +120,54 @@ function InstallRow() {
 
 function AccountPanel() {
   const { t, formatDate } = useI18n();
-  const { configured, status, email, lastSyncedAt, syncError, signIn, signOut, syncNow } = useProgress();
+  const { configured, status, email, lastSyncedAt, syncError, signIn, verifyEmailCode, signOut, syncNow } =
+    useProgress();
   const [address, setAddress] = useState('');
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [code, setCode] = useState('');
+  const [codeBusy, setCodeBusy] = useState(false);
+  const [codeError, setCodeError] = useState<string | null>(null);
+  const [codeSentTo, setCodeSentTo] = useState<string | null>(null);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!address.trim()) return;
+    const target = address.trim();
+    if (!target) return;
     setBusy(true);
     setNotice(null);
-    const result = await signIn(address);
+    setCodeError(null);
+    const result = await signIn(target);
     setBusy(false);
-    setNotice(
-      result.ok
-        ? t('Check {email} for a sign-in link. It may take a minute.', { email: address.trim() })
-        : (result.error ?? t('Could not send the link.')),
-    );
+    if (result.ok) {
+      setCode('');
+      setCodeSentTo(target);
+      setNotice(
+        t('Check {email} for a 6-digit sign-in code. Enter it below.', {
+          email: target,
+        }),
+      );
+    } else {
+      setNotice(result.error ?? t('Could not send the link.'));
+    }
+  };
+
+  const verify = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!codeSentTo || !isEmailCodeComplete(code)) return;
+    setCodeBusy(true);
+    setCodeError(null);
+    const result = await verifyEmailCode(codeSentTo, code);
+    setCodeBusy(false);
+    if (!result.ok) {
+      setCodeError(
+        t(result.error ?? 'That code is incorrect or has expired. Request a new one.'),
+      );
+      return;
+    }
+    setCode('');
+    setNotice(null);
+    setCodeSentTo(null);
   };
 
   return (
@@ -199,32 +231,66 @@ function AccountPanel() {
           </p>
         </div>
       ) : (
-        <form className="sync-form" onSubmit={submit}>
-          <p className="settings-note">
-            {t(
-              'Sign in with an email link — no password to remember. Your lessons, reviews, XP, and streaks then follow you between devices. Progress stays on this device and keeps working offline.',
-            )}
-          </p>
-          <div className="sync-input-row">
-            <label className="sr-only" htmlFor="sync-email">
-              {t('Email address')}
-            </label>
-            <input
-              id="sync-email"
-              className="sync-input"
-              type="email"
-              required
-              autoComplete="email"
-              placeholder={t('you@example.com')}
-              value={address}
-              onChange={(event) => setAddress(event.target.value)}
-            />
-            <button className="button primary small" type="submit" disabled={busy}>
-              {busy ? t('Sending…') : t('Email me a link')}
-            </button>
-          </div>
-          {notice && <p className="sync-notice">{notice}</p>}
-        </form>
+        <>
+          <form className="sync-form" onSubmit={submit}>
+            <p className="settings-note">
+              {t(
+                'Sign in with a one-time code — no password to remember. Your lessons, reviews, XP, and streaks then follow you between devices. Progress stays on this device and keeps working offline.',
+              )}
+            </p>
+            <div className="sync-input-row">
+              <label className="sr-only" htmlFor="sync-email">
+                {t('Email address')}
+              </label>
+              <input
+                id="sync-email"
+                className="sync-input"
+                type="email"
+                required
+                autoComplete="email"
+                placeholder={t('you@example.com')}
+                value={address}
+                onChange={(event) => setAddress(event.target.value)}
+              />
+              <button className="button primary small" type="submit" disabled={busy}>
+                {busy ? t('Sending…') : t('Email me a code')}
+              </button>
+            </div>
+            {notice && <p className="sync-notice">{notice}</p>}
+          </form>
+          {codeSentTo && (
+            <form className="sync-form sync-code-form" onSubmit={verify}>
+              <label className="sr-only" htmlFor="sync-code">
+                {t('Sign-in code')}
+              </label>
+              <div className="sync-input-row">
+                <input
+                  id="sync-code"
+                  className="sync-input sync-code-input"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  pattern="[0-9]*"
+                  placeholder={t('6-digit code')}
+                  value={code}
+                  onChange={(event) => setCode(normalizeEmailCode(event.target.value))}
+                />
+                <button
+                  className="button primary small"
+                  type="submit"
+                  disabled={codeBusy || !isEmailCodeComplete(code)}
+                >
+                  {codeBusy ? t('Verifying…') : t('Verify code')}
+                </button>
+              </div>
+              {codeError ? (
+                <p className="sync-notice sync-notice-error">{codeError}</p>
+              ) : (
+                <p className="settings-note">{t('Use the code from the email. It expires after one hour.')}</p>
+              )}
+            </form>
+          )}
+        </>
       )}
     </section>
   );
