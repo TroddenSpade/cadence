@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useI18n } from '../lib/i18n';
 import Icon from './Icons';
 import {
@@ -30,6 +30,7 @@ export default function InstallPrompt() {
   const [chromium] = useState(() => isChromium());
   const [visible, setVisible] = useState(false);
   const [installing, setInstalling] = useState(false);
+  const promptRef = useRef<HTMLElement>(null);
 
   const eligible = available || ios || chromium;
 
@@ -43,6 +44,24 @@ export default function InstallPrompt() {
   useEffect(() => {
     document.body.classList.toggle('has-install-prompt', visible);
     return () => document.body.classList.remove('has-install-prompt');
+  }, [visible]);
+
+  useLayoutEffect(() => {
+    const prompt = promptRef.current;
+    if (!visible || !prompt) return;
+
+    // The metronome dock sits above this card on small screens. Publish the
+    // card's real height so the dock can hug it instead of using a fixed guess
+    // that leaves a gap when the copy wraps onto fewer lines.
+    const root = document.documentElement;
+    const measure = () => root.style.setProperty('--install-prompt-height', `${prompt.offsetHeight}px`);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(prompt);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty('--install-prompt-height');
+    };
   }, [visible]);
 
   useEffect(() => {
@@ -81,7 +100,7 @@ export default function InstallPrompt() {
   };
 
   return (
-    <aside className="install-prompt" role="dialog" aria-label={t('Install Cadence')}>
+    <aside ref={promptRef} className="install-prompt" role="dialog" aria-label={t('Install Cadence')}>
       <span className="install-prompt-icon">
         <Icon name="download" size={20} />
       </span>

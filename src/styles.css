@@ -253,9 +253,9 @@ strong {
     width: auto;
   }
 
-  /* Keep the floating metronome clear of the install card. */
+  /* Sit the floating metronome just above the measured install card. */
   body.has-install-prompt .metronome-dock {
-    bottom: calc(76px + env(safe-area-inset-bottom) + 196px);
+    bottom: calc(76px + env(safe-area-inset-bottom) + var(--install-prompt-height, 154px) + 12px);
   }
 }
 

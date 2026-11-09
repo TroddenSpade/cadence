@@ -142,4 +142,24 @@ baseTest.describe('mobile first visit', () => {
     await expect(page.locator('.language-modal')).toHaveCount(0);
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   });
+
+  baseTest('keeps the install card close to the metronome dock', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('cadence.language', 'en');
+      localStorage.removeItem('cadence.install.dismissed.v1');
+    });
+    await page.goto('/', { waitUntil: 'networkidle' });
+
+    const prompt = page.locator('.install-prompt');
+    await expect(prompt).toBeVisible();
+
+    const dockBox = await page.locator('.metronome-dock').boundingBox();
+    const promptBox = await prompt.boundingBox();
+    expect(dockBox).not.toBeNull();
+    expect(promptBox).not.toBeNull();
+
+    const gap = promptBox!.y - (dockBox!.y + dockBox!.height);
+    expect(gap, 'install card should hug the metronome dock').toBeGreaterThanOrEqual(0);
+    expect(gap, 'install card should hug the metronome dock').toBeLessThanOrEqual(24);
+  });
 });
